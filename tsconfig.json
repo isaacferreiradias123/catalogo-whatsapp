@@ -7,9 +7,7 @@
     "skipLibCheck": true,
     "noUncheckedIndexedAccess": false,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx"
+    "types": ["vite/client"]
   },
   "include": ["src/main.ts", "src/content.ts", "src/site.ts", "src/styles/**/*.css"]
 }

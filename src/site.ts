@@ -159,8 +159,6 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"></noscript>
-<!-- CSS compilado no build: substitui o Tailwind via CDN, que compilava no navegador do visitante. -->
-<link rel="stylesheet" href="./static/app.css">
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <style>
   :root{color-scheme:light;--page:#f8fafc;--surface:#fff;--surface-muted:#f8fafc;--ink:#0f172a;--muted:#475569;--muted-soft:#64748b;--line:#e2e8f0;--soft-blue:#eff6ff;--soft-red:#fef2f2;--topbar-bg:#eaf2ff;--topbar-ink:#0f172a;--topbar-link:#1d4ed8;--ease-out:cubic-bezier(.23,1,.32,1)}
