@@ -1,4 +1,4 @@
-// Renderização SSR do site público a partir do conteúdo do banco
+// Renderização estática do site público a partir do conteúdo local.
 export type SiteContent = Record<string, any>
 
 const esc = (s: unknown): string =>
@@ -96,7 +96,7 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
   const origin = (opts.origin || '').replace(/\/+$/, '')
   const path = opts.path && opts.path.startsWith('/') ? opts.path : '/'
   const pageUrl = origin ? origin + (path === '/' ? '/' : path) : path
-  const abs = (u: string) => (u.startsWith('http') || !origin ? u : origin + u)
+  const abs = (u: string) => (origin ? new URL(u, pageUrl).href : u)
   const canonicalUrl = seo.canonical || pageUrl
   const ogImageUrl = abs(safeImageSrc(seo.ogImage || s.logoUrl, './static/projeto-logo-recortado.png'))
 
@@ -112,7 +112,7 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
     email: s.email || undefined,
     areaServed: s.city ? `${s.city}, ${s.state}` : undefined,
     address: { '@type': 'PostalAddress', addressLocality: s.city, addressRegion: s.state, addressCountry: 'BR' },
-    openingHours: s.businessHours || undefined,
+    // "Atendimento remoto" é uma modalidade, não um horário válido para o schema.
     sameAs: [s.instagram, s.facebook, s.tiktok].filter(Boolean),
     hasOfferCatalog: services.length
       ? {
@@ -218,7 +218,8 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   .brand-mark{display:block;background:transparent;border-radius:0;padding:0;transition:opacity .2s ease,transform .16s var(--ease-out)}
   .brand-mark:hover{opacity:.86}
   .logo-asset{display:block;max-width:100%;height:auto;object-fit:contain}
-  html[data-theme="dark"] .project-logo,html[data-theme="dark"] .institution-logo{filter:none!important;opacity:1!important}
+  html[data-theme="dark"] .project-logo{background:#f8fafc;border-radius:.5rem;padding:.2rem;opacity:1!important}
+  html[data-theme="dark"] .institution-logo{background:#f8fafc;border-radius:.75rem;padding:.65rem;opacity:1!important}
   .wa-float{animation:pulse-soft 2.5s infinite}
   #mobile-bar{padding-bottom:calc(.75rem + env(safe-area-inset-bottom));background-color:var(--surface)!important;border-color:var(--line)!important}
   @keyframes pulse-soft{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}

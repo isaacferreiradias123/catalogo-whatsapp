@@ -36,6 +36,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Check generated page
+        run: npm test
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

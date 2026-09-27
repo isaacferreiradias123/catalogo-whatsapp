@@ -1,4 +1,4 @@
-import type { SiteContent } from './site'
+import type { SiteContent } from './site.ts'
 
 /**
  * Conteúdo público da load page.
@@ -82,7 +82,7 @@ export const content: SiteContent = {
     { id: 1, name: 'Perfil organizado', description: 'Descrição, horário, endereço e informações básicas do seu negócio.', icon: 'id-card' },
     { id: 2, name: 'Catálogo claro', description: 'Até 10 produtos ou serviços com foto, nome, preço e descrição.', icon: 'book-open' },
     { id: 3, name: 'Respostas prontas', description: 'Até 6 respostas para as perguntas que seus clientes mais fazem.', icon: 'message-circle' },
-    { id: 4, name: 'Mensagens automáticas', description: 'Uma mensagem de saudação, uma de ausência e uma de pagamento/Pix.', icon: 'clock' },
+    { id: 4, name: 'Mensagens de atendimento', description: 'Saudação e ausência automáticas, além de uma mensagem pronta de pagamento/Pix.', icon: 'clock' },
     { id: 5, name: 'Fotos e PDF', description: 'Ajuste simples das fotos e PDF com cardápio ou tabela, quando fizer sentido.', icon: 'palette' },
     { id: 6, name: 'Orientação final', description: 'Explicamos tudo em uma chamada de até 15 minutos e fazemos uma correção.', icon: 'list-checks' }
   ],
