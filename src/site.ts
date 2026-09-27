@@ -180,6 +180,7 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   .faq-answer>div{overflow:hidden}
   .faq-item[data-open="true"] .faq-chevron{transform:rotate(180deg)}
   .faq-chevron{transition:transform .28s var(--ease-out)}
+  #hero-highlights{margin-top:3.5rem!important}
   a:focus-visible,button:focus-visible{outline:3px solid #60a5fa;outline-offset:3px;border-radius:8px}
   button,a{touch-action:manipulation}
   button:active,a:active{transform:translateY(1px)}
@@ -221,7 +222,7 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   .wa-float{animation:pulse-soft 2.5s infinite}
   #mobile-bar{padding-bottom:calc(.75rem + env(safe-area-inset-bottom));background-color:var(--surface)!important;border-color:var(--line)!important}
   @keyframes pulse-soft{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}
-  @media (max-width:640px){#mobile-menu .mobile-link{min-height:2.75rem;display:flex;align-items:center}#mobile-menu>div{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.wa-float{bottom:calc(1rem + env(safe-area-inset-bottom))!important;right:1rem!important}#hero-highlights{margin-top:3.5rem!important}}
+  @media (max-width:640px){#mobile-menu .mobile-link{min-height:2.75rem;display:flex;align-items:center}#mobile-menu>div{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.wa-float{bottom:calc(1rem + env(safe-area-inset-bottom))!important;right:1rem!important}#hero-highlights{margin-top:4.5rem!important}}
   @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.fade-up{opacity:1;transform:none;transition:none}.wa-float{animation:none}button,a,#scroll-progress{transition:none!important}}
 </style>
 ${analyticsScripts}
