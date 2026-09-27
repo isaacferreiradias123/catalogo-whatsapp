@@ -30,7 +30,7 @@ export const content: SiteContent = {
   },
   topbar: {
     enabled: true,
-    text: 'Foco em Pedreiras — MA • atendimento 100% remoto',
+    text: 'Atendimento 100% remoto',
     linkText: 'Falar agora',
     linkEnabled: true
   },
@@ -50,7 +50,7 @@ export const content: SiteContent = {
     badge: 'CatáloGO • WhatsApp Vendas Express',
     title: 'Deixe seu WhatsApp mais organizado e fácil de entender.',
     subtitle: 'Ajudamos pequenos negócios, com foco em Pedreiras — MA, a organizar produtos, preços e mensagens. O atendimento é remoto e também pode ser feito para outras cidades.',
-    ctaPrimary: 'Quero organizar meu WhatsApp',
+    ctaPrimary: '',
     ctaSecondary: 'Ver como funciona',
     mockupLabel: 'Entrega em até 48 horas'
   },
@@ -170,7 +170,7 @@ export const content: SiteContent = {
   whatsappWidget: {
     floatingEnabled: true,
     floatingTooltip: 'Fale com a CatáloGO',
-    mobileBarEnabled: true,
+    mobileBarEnabled: false,
     mobileBarText: 'Falar no WhatsApp'
   }
 }

@@ -221,7 +221,7 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   .wa-float{animation:pulse-soft 2.5s infinite}
   #mobile-bar{padding-bottom:calc(.75rem + env(safe-area-inset-bottom));background-color:var(--surface)!important;border-color:var(--line)!important}
   @keyframes pulse-soft{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}
-  @media (max-width:640px){#mobile-menu .mobile-link{min-height:2.75rem;display:flex;align-items:center}#mobile-menu>div{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.wa-float{bottom:calc(4.75rem + env(safe-area-inset-bottom))!important;right:1rem!important}}
+  @media (max-width:640px){#mobile-menu .mobile-link{min-height:2.75rem;display:flex;align-items:center}#mobile-menu>div{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.wa-float{bottom:calc(1rem + env(safe-area-inset-bottom))!important;right:1rem!important}}
   @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.fade-up{opacity:1;transform:none;transition:none}.wa-float{animation:none}button,a,#scroll-progress{transition:none!important}}
 </style>
 ${analyticsScripts}
@@ -274,26 +274,26 @@ ${topbar.enabled ? `
 ${hero.enabled !== false ? `
 <section id="hero-section" class="relative overflow-hidden bg-primary text-white">
   <div class="absolute inset-0 opacity-[0.07]" aria-hidden="true" style="background-image:radial-gradient(circle at 20% 30%, #2563EB 0, transparent 40%),radial-gradient(circle at 80% 70%, #10B981 0, transparent 40%)"></div>
-  <div class="relative max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-20 md:py-28 text-center">
-    ${hero.badge ? `<span class="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-slate-100 text-sm sm:text-base font-semibold px-5 py-2 rounded-full mb-8">${esc(hero.badge)}</span>` : ''}
+  <div class="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-20 md:py-28 text-center">
+    ${hero.badge ? `<span class="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-slate-100 text-sm sm:text-base font-semibold px-4 sm:px-5 py-2 rounded-full mb-6 sm:mb-8">${esc(hero.badge)}</span>` : ''}
     <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.12] tracking-tight">${esc(hero.title)}</h1>
-    <p class="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto">${esc(hero.subtitle)}</p>
-    <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-      <a href="${wa()}" target="_blank" rel="noopener" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-dark text-white font-bold px-6 sm:px-9 py-4 sm:py-5 rounded-xl text-base sm:text-lg transition-all hover:scale-[1.02]">${WA_SVG}${esc(hero.ctaPrimary)}</a>
-      <a href="#como-funciona" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/25 text-white font-semibold px-6 sm:px-9 py-4 sm:py-5 rounded-xl text-base sm:text-lg transition-colors">${esc(hero.ctaSecondary)}</a>
+    <p class="mt-5 sm:mt-6 text-base sm:text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto">${esc(hero.subtitle)}</p>
+    <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+      ${hero.ctaPrimary ? `<a href="${wa()}" target="_blank" rel="noopener" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-dark text-white font-bold px-6 sm:px-9 py-4 sm:py-5 rounded-xl text-base sm:text-lg transition-all hover:scale-[1.02]">${WA_SVG}${esc(hero.ctaPrimary)}</a>` : ''}
+      ${hero.ctaSecondary ? `<a href="#como-funciona" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 ${hero.ctaPrimary ? 'bg-white/10 hover:bg-white/20 border border-white/25' : 'bg-accent hover:bg-accent-dark'} text-white font-semibold px-6 sm:px-9 py-4 sm:py-5 rounded-xl text-base sm:text-lg transition-colors">${esc(hero.ctaSecondary)}</a>` : ''}
     </div>
-    <div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
-      <div class="bg-white/5 border border-white/15 rounded-2xl px-5 py-6 flex flex-col items-center gap-3">
-        <span class="w-12 h-12 rounded-xl bg-accent/20 text-accent flex items-center justify-center">${icon('check', 'w-6 h-6')}</span>
-        <span class="text-base font-semibold text-slate-200">Preço transparente</span>
+    <div class="mt-9 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl mx-auto">
+      <div class="bg-white/5 border border-white/15 rounded-2xl px-4 sm:px-5 py-4 sm:py-6 flex flex-row sm:flex-col items-center justify-center gap-3">
+        <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-accent/20 text-accent flex items-center justify-center">${icon('check', 'w-5 h-5 sm:w-6 sm:h-6')}</span>
+        <span class="text-sm sm:text-base font-semibold text-slate-200">Preço transparente</span>
       </div>
-      <div class="bg-white/5 border border-white/15 rounded-2xl px-5 py-6 flex flex-col items-center gap-3">
-        <span class="w-12 h-12 rounded-xl bg-accent/20 text-accent flex items-center justify-center">${icon('shield', 'w-6 h-6')}</span>
-        <span class="text-base font-semibold text-slate-200">Validação antes da entrega</span>
+      <div class="bg-white/5 border border-white/15 rounded-2xl px-4 sm:px-5 py-4 sm:py-6 flex flex-row sm:flex-col items-center justify-center gap-3">
+        <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-accent/20 text-accent flex items-center justify-center">${icon('shield', 'w-5 h-5 sm:w-6 sm:h-6')}</span>
+        <span class="text-sm sm:text-base font-semibold text-slate-200">Validação antes da entrega</span>
       </div>
-      <div class="bg-white/5 border border-white/15 rounded-2xl px-5 py-6 flex flex-col items-center gap-3">
-        <span class="w-12 h-12 rounded-xl bg-accent/20 text-accent flex items-center justify-center">${icon('map-pin', 'w-6 h-6')}</span>
-        <span class="text-base font-semibold text-slate-200">Atendimento local</span>
+      <div class="bg-white/5 border border-white/15 rounded-2xl px-4 sm:px-5 py-4 sm:py-6 flex flex-row sm:flex-col items-center justify-center gap-3">
+        <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-accent/20 text-accent flex items-center justify-center">${icon('map-pin', 'w-5 h-5 sm:w-6 sm:h-6')}</span>
+        <span class="text-sm sm:text-base font-semibold text-slate-200">Atendimento remoto</span>
       </div>
     </div>
   </div>
@@ -535,7 +535,7 @@ ${contactSection.enabled !== false ? `
 
 ${widget.floatingEnabled ? `
 <a href="${wa()}" target="_blank" rel="noopener" aria-label="${esc(widget.floatingTooltip || 'Falar no WhatsApp')}" title="${esc(widget.floatingTooltip || 'Falar no WhatsApp')}"
-   class="wa-float fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 w-14 h-14 bg-accent hover:bg-accent-dark text-white rounded-full flex items-center justify-center shadow-xl transition-transform hover:scale-110">
+   class="wa-float fixed bottom-5 md:bottom-6 right-4 md:right-6 z-50 w-14 h-14 bg-accent hover:bg-accent-dark text-white rounded-full flex items-center justify-center shadow-xl transition-transform hover:scale-110">
   <svg viewBox="0 0 32 32" fill="currentColor" class="w-8 h-8" aria-hidden="true"><path d="M16.004 3C9.383 3 4 8.383 4 15.004c0 2.646.868 5.096 2.338 7.09L4.06 28.062l6.14-2.23a11.94 11.94 0 0 0 5.804 1.494C22.625 27.326 28 21.943 28 15.322 28 8.7 22.625 3 16.004 3zm0 21.994a9.94 9.94 0 0 1-5.07-1.387l-.363-.216-3.644 1.324 1.288-3.553-.237-.373a9.93 9.93 0 0 1-1.552-5.348c0-5.49 4.468-9.958 9.958-9.958 5.49 0 9.957 4.468 9.957 9.958 0 5.49-4.467 9.553-9.937 9.553zm5.462-7.44c-.3-.15-1.77-.874-2.045-.974-.274-.1-.474-.15-.673.15-.2.3-.774.973-.948 1.173-.175.2-.35.225-.65.075-.3-.15-1.264-.466-2.408-1.485-.89-.794-1.49-1.774-1.665-2.074-.174-.3-.018-.462.132-.612.135-.134.3-.35.45-.524.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.673-1.622-.923-2.222-.243-.583-.49-.504-.673-.513l-.573-.01c-.2 0-.524.075-.798.375-.275.3-1.048 1.024-1.048 2.497 0 1.473 1.072 2.895 1.222 3.095.15.2 2.11 3.222 5.112 4.517.714.308 1.272.492 1.706.63.717.228 1.37.196 1.886.119.575-.086 1.77-.724 2.02-1.423.25-.7.25-1.298.175-1.423-.075-.125-.275-.2-.575-.35z"/></svg>
 </a>` : ''}
 
