@@ -7,6 +7,15 @@ const html = readFileSync(join('dist', 'index.html'), 'utf8')
 const head = html.match(/<head>([\s\S]*?)<\/head>/i)?.[1] || ''
 const body = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] || ''
 
+function cssRuleHas(selectorPattern, declarations) {
+  const rule = head.match(new RegExp(selectorPattern + '\\{([^}]*)\\}'))?.[1] || ''
+  assert.ok(rule, 'Regra CSS não encontrada: ' + selectorPattern)
+
+  for (const declaration of declarations) {
+    assert.match(rule, declaration)
+  }
+}
+
 test('documento possui estrutura semântica, viewport e atalho de acessibilidade', () => {
   assert.match(head, /<meta name="viewport" content="width=device-width, initial-scale=1\.0">/)
   assert.match(body, /class="skip-link"[^>]*>Pular para o conteúdo principal<\/a>/)
@@ -49,13 +58,19 @@ test('FAQ expõe relacionamento acessível entre controles e painéis', () => {
 })
 
 test('conteúdo continua visível e navegável quando JavaScript não executa', () => {
-  assert.match(head, /\.fade-up\{opacity:1;transform:none\}/)
-  assert.match(head, /\.js \.fade-up\{opacity:0/)
-  assert.match(head, /\.faq-answer\{display:grid;grid-template-rows:1fr\}/)
-  assert.match(head, /html:not\(\.js\) #mobile-menu\{display:block!important\}/)
+  cssRuleHas('\\.fade-up', [/opacity:1/, /transform:none/])
+  cssRuleHas('\\.js \\.fade-up', [/opacity:0/])
+  cssRuleHas('\\.faq-answer', [/display:grid/, /grid-template-rows:1fr/])
+  cssRuleHas('html:not\\(\\.js\\) #mobile-menu', [/display:block!important/])
 })
 
 test('preferência por movimento reduzido é respeitada', () => {
-  assert.match(head, /@media \(prefers-reduced-motion: reduce\)/)
-  assert.match(head, /\.js \.fade-up\{opacity:1;transform:none;transition:none\}/)
+  assert.match(head, /@media\s*\(prefers-reduced-motion:\s*reduce\)/)
+  // O Vite/Lightning CSS pode reordenar declarações durante a minificação.
+  // O teste valida o comportamento, não a ordem textual das propriedades.
+  const reducedMotionRule = [...head.matchAll(/\.js \.fade-up\{([^}]*)\}/g)]
+    .map((match) => match[1])
+    .find((rule) => /opacity:1/.test(rule) && /transform:none/.test(rule) && /transition:none/.test(rule))
+
+  assert.ok(reducedMotionRule, 'A regra de movimento reduzido deve desativar animação e transição de .fade-up')
 })
