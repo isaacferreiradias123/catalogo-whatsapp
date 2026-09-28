@@ -139,7 +139,7 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f8fafc">
-<script>(function(){try{var saved=localStorage.getItem('site-theme');var theme=saved==='dark'?'dark':'light';document.documentElement.setAttribute('data-theme',theme)}catch(_){document.documentElement.setAttribute('data-theme','light')}})();</script>
+<script>(function(){var root=document.documentElement;root.classList.add('js');try{var saved=localStorage.getItem('site-theme');var theme=saved==='dark'?'dark':'light';root.setAttribute('data-theme',theme)}catch(_){root.setAttribute('data-theme','light')}})();</script>
 <title>${esc(seo.title || s.companyName)}</title>
 <meta name="description" content="${esc(seo.description || s.description)}">
 ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
@@ -168,7 +168,8 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   #scroll-progress{position:fixed;inset:0 0 auto 0;height:3px;z-index:70;pointer-events:none;background:linear-gradient(90deg,#2563eb,#10b981);transform:scaleX(0);transform-origin:left center;transition:transform .12s linear}
   img{max-width:100%;height:auto}
   section[id]{scroll-margin-top:5rem}
-  .fade-up{opacity:0;transform:translateY(18px);transition:opacity .55s var(--ease-out) var(--reveal-delay,0ms),transform .55s var(--ease-out) var(--reveal-delay,0ms)}
+  .fade-up{opacity:1;transform:none}
+  html.js .fade-up{opacity:0;transform:translateY(18px);transition:opacity .55s var(--ease-out) var(--reveal-delay,0ms),transform .55s var(--ease-out) var(--reveal-delay,0ms)}
   ::selection{background:rgba(37,99,235,.18);color:var(--ink)}
   #site-header.is-scrolled{box-shadow:0 8px 26px rgba(15,23,42,.08)}
   html[data-theme="dark"] #site-header.is-scrolled{box-shadow:0 8px 26px rgba(0,0,0,.24)}
@@ -224,7 +225,7 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   #mobile-bar{padding-bottom:calc(.75rem + env(safe-area-inset-bottom));background-color:var(--surface)!important;border-color:var(--line)!important}
   @keyframes pulse-soft{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}
   @media (max-width:640px){#mobile-menu .mobile-link{min-height:2.75rem;display:flex;align-items:center}#mobile-menu>div{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.wa-float{bottom:calc(1rem + env(safe-area-inset-bottom))!important;right:1rem!important}#hero-highlights{margin-top:4.5rem!important}}
-  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.fade-up{opacity:1;transform:none;transition:none}.wa-float{animation:none}button,a,#scroll-progress{transition:none!important}}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}html.js .fade-up{opacity:1;transform:none;transition:none}.wa-float{animation:none}button,a,#scroll-progress{transition:none!important}}
 </style>
 ${analyticsScripts}
 </head>
@@ -257,7 +258,7 @@ ${topbar.enabled ? `
     </div>
     <div class="flex items-center gap-2 xl:hidden">
       <button type="button" data-theme-toggle class="theme-toggle" aria-label="Ativar tema escuro" aria-pressed="false" title="Alternar tema">${THEME_TOGGLE}<span class="sr-only">Alternar tema</span></button>
-      <button id="menu-btn" class="p-2 text-primary" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-menu">
+      <button type="button" id="menu-btn" class="p-2 text-primary" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-menu">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-7 h-7"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
     </button>
     </div>
@@ -334,7 +335,7 @@ ${authority.enabled !== false ? `
     </div>
     <div class="fade-up">
       <div class="flex flex-col items-center text-center">
-        <img src="${esc(safeImageSrc(s.institutionLogoUrl, './static/uema-logo-recortado.png'))}" alt="Logotipo da Universidade Estadual do Maranhão — UEMA" class="institution-logo logo-asset w-full max-w-2xl" loading="lazy" decoding="async">
+        <img src="${esc(safeImageSrc(s.institutionLogoUrl, './static/uema-logo-recortado.png'))}" alt="Logotipo da Universidade Estadual do Maranhão — UEMA" class="institution-logo logo-asset w-full max-w-2xl" width="1400" height="511" loading="lazy" decoding="async">
         <p class="mt-6 text-xs text-slate-400 leading-relaxed max-w-sm">A identidade institucional pertence à universidade. O serviço comercial é de responsabilidade do projeto, com identidade própria.</p>
       </div>
     </div>
@@ -417,7 +418,7 @@ ${faqSection.enabled !== false && faqs.length ? `
     <div class="space-y-3">
             ${faqs.map((f, i) => `
       <div class="faq-item bg-slate-50 border border-slate-200 rounded-xl fade-up" data-open="false" style="--reveal-delay:${Math.min(i, 5) * 45}ms">
-          <button id="faq-trigger-${i}" class="faq-toggle w-full flex items-center justify-between gap-4 text-left px-5 py-4 font-semibold text-primary" aria-expanded="false" aria-controls="faq-panel-${i}">
+          <button type="button" id="faq-trigger-${i}" class="faq-toggle w-full flex items-center justify-between gap-4 text-left px-5 py-4 font-semibold text-primary" aria-expanded="false" aria-controls="faq-panel-${i}">
 
           ${esc(f.question)}
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="faq-chevron w-5 h-5 shrink-0 text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
@@ -520,7 +521,7 @@ ${contactSection.enabled !== false ? `
       <h3 class="font-bold text-white mb-4">Institucional</h3>
       <p class="text-xs text-slate-400 leading-relaxed">${esc(footer.institutionalNote)}</p>
       <div class="mt-4 max-w-sm">
-        <img src="${esc(safeImageSrc(s.institutionLogoUrl, './static/uema-logo-recortado.png'))}" alt="Logotipo da UEMA — Universidade Estadual do Maranhão" class="institution-logo logo-asset w-full" loading="lazy" decoding="async">
+        <img src="${esc(safeImageSrc(s.institutionLogoUrl, './static/uema-logo-recortado.png'))}" alt="Logotipo da UEMA — Universidade Estadual do Maranhão" class="institution-logo logo-asset w-full" width="1400" height="511" loading="lazy" decoding="async">
       </div>
     </div>
   </div>
