@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -26,28 +26,11 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
-          package-manager-cache: false
-
-      - name: Check tracked lockfile
-        id: lockfile
-        run: |
-          if git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
-            echo "tracked=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "tracked=false" >> "$GITHUB_OUTPUT"
-          fi
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Commit generated lockfile
-        if: steps.lockfile.outputs.tracked == 'false'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "Adicionar package-lock para builds reproduzíveis"
-          git push
+        run: npm ci --no-audit --no-fund
 
       - name: Quality checks
         run: npm run check

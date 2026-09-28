@@ -11,6 +11,7 @@ const css = readdirSync(join('dist', 'assets'))
   .map((name) => readFileSync(join('dist', 'assets', name), 'utf8'))
   .join('\n')
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
+const packageLock = JSON.parse(readFileSync('package-lock.json', 'utf8'))
 
 test('a página publicada já contém o conteúdo principal sem executar JavaScript', () => {
   assert.ok(head && body)
@@ -61,4 +62,10 @@ test('CSS publicado contém os utilitários responsivos usados pela landing page
 
 test('o site não possui dependências npm de produção', () => {
   assert.deepEqual(packageJson.dependencies || {}, {})
+})
+
+
+test('package-lock está sincronizado com as ferramentas diretas do projeto', () => {
+  assert.equal(packageLock.lockfileVersion, 3)
+  assert.deepEqual(packageLock.packages?.['']?.devDependencies || {}, packageJson.devDependencies || {})
 })
