@@ -5,14 +5,22 @@ const esc = (s: unknown): string =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 function waLink(number: string, message: string): string {
-  return `https://wa.me/${(number || '').replace(/\D/g, '')}?text=${encodeURIComponent(message || '')}`
+  const digits = (number || '').replace(/\D/g, '')
+  return digits ? `https://wa.me/${digits}?text=${encodeURIComponent(message || '')}` : '#'
 }
 
 function safeHref(value: unknown, fallback = '#'): string {
   const raw = String(value ?? '').trim()
   if (/^#[a-z0-9_-]+$/i.test(raw)) return raw
-  if (/^https?:\/\/[^\s<]+$/i.test(raw)) return raw
-  if (/^(mailto|tel):[^\s<]+$/i.test(raw)) return raw
+  if (/^https?:\/\/[^\s<>"']+$/i.test(raw)) return raw
+  if (/^(mailto|tel):[^\s<>"']+$/i.test(raw)) return raw
+  return fallback
+}
+
+function safeWebHref(value: unknown, fallback = ''): string {
+  const raw = String(value ?? '').trim()
+  if (/^https?:\/\/[^\s<>"']+$/i.test(raw)) return raw
+  if (/^\/(?!\/)[^\s<>"']*$/i.test(raw)) return raw
   return fallback
 }
 
@@ -24,6 +32,20 @@ function safeImageSrc(value: unknown, fallback: string): string {
 
 function jsString(value: unknown): string {
   return JSON.stringify(String(value ?? ''))
+}
+
+function jsonForHtmlScript(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003C')
+    .replace(/>/g, '\\u003E')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+}
+
+function safeAnalyticsId(value: unknown): string {
+  const raw = String(value ?? '').trim()
+  return /^[A-Za-z0-9_-]{3,64}$/.test(raw) ? raw : ''
 }
 
 const ICONS: Record<string, string> = {
@@ -87,17 +109,50 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
 
   const wa = (msg?: string) => waLink(s.whatsapp, msg || s.whatsappDefaultMessage)
 
-  const navLinks: any[] = navbar.links || []
   const testimonialsSection = ct.testimonialsSection || {}
   const testimonials: any[] = ct.testimonials || []
   const contactSection = ct.contactSection || {}
 
+  const sectionAvailability: Record<string, boolean> = {
+    '#inicio': true,
+    '#problemas': problems.enabled !== false && problemCards.length > 0,
+    '#autoridade': authority.enabled !== false,
+    '#servicos': servicesSection.enabled !== false && services.length > 0,
+    '#planos': plansSection.enabled !== false && plans.length > 0,
+    '#como-funciona': stepsSection.enabled !== false && steps.length > 0,
+    '#faq': faqSection.enabled !== false && faqs.length > 0,
+    '#cta-final': finalCta.enabled !== false,
+    '#depoimentos': testimonialsSection.enabled !== false && testimonials.length > 0,
+    '#contato': contactSection.enabled !== false
+  }
+
+  const navLinks: any[] = (Array.isArray(navbar.links) ? navbar.links : []).filter((link: any) => {
+    const href = safeHref(link?.href, '')
+    return Boolean(href) && (!href.startsWith('#') || sectionAvailability[href] === true)
+  })
+
+  const secondaryCtaHref =
+    sectionAvailability['#como-funciona'] ? '#como-funciona'
+      : sectionAvailability['#servicos'] ? '#servicos'
+        : sectionAvailability['#planos'] ? '#planos'
+          : sectionAvailability['#contato'] ? '#contato'
+            : '#inicio'
+
+  const instagramHref = safeWebHref(s.instagram, '')
+  const facebookHref = safeWebHref(s.facebook, '')
+  const tiktokHref = safeWebHref(s.tiktok, '')
+  const socialUrls = [instagramHref, facebookHref, tiktokHref].filter(Boolean)
+  const footerNavHref = sectionAvailability['#contato'] ? '#contato' : '#inicio'
+  const footerNavLabel = sectionAvailability['#contato'] ? 'Contato' : 'Voltar ao início'
+
   // URLs absolutas: canonical e og:url devem sempre apontar para a propria pagina.
-  const origin = (opts.origin || '').replace(/\/+$/, '')
-  const path = opts.path && opts.path.startsWith('/') ? opts.path : '/'
+  const rawOrigin = String(opts.origin || '').replace(/\/+$/, '')
+  const origin = /^https?:\/\/[^\s<>"']+$/i.test(rawOrigin) ? rawOrigin : ''
+  const rawPath = String(opts.path || '/')
+  const path = /^\/(?!\/)[^\s<>"']*$/.test(rawPath) ? rawPath : '/'
   const pageUrl = origin ? origin + (path === '/' ? '/' : path) : path
   const abs = (u: string) => (origin ? new URL(u, pageUrl).href : u)
-  const canonicalUrl = seo.canonical || pageUrl
+  const canonicalUrl = safeWebHref(seo.canonical || pageUrl, pageUrl)
   const ogImageUrl = abs(safeImageSrc(seo.ogImage || s.logoUrl, './static/projeto-logo-recortado.png'))
 
   // Dados estruturados: negocio local + catalogo de servicos.
@@ -113,7 +168,7 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
     areaServed: s.city ? `${s.city}, ${s.state}` : undefined,
     address: { '@type': 'PostalAddress', addressLocality: s.city, addressRegion: s.state, addressCountry: 'BR' },
     // "Atendimento remoto" é uma modalidade, não um horário válido para o schema.
-    sameAs: [s.instagram, s.facebook, s.tiktok].filter(Boolean),
+    sameAs: socialUrls,
     hasOfferCatalog: services.length
       ? {
           '@type': 'OfferCatalog',
@@ -126,10 +181,13 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
       : undefined
   }
 
+  const gtmId = safeAnalyticsId(analytics.gtmId)
+  const googleAnalyticsId = safeAnalyticsId(analytics.googleAnalyticsId)
+  const metaPixelId = safeAnalyticsId(analytics.metaPixelId)
   const analyticsScripts = [
-    analytics.gtmId ? `<script async src="https://www.googletagmanager.com/gtm.js?id=${esc(analytics.gtmId)}"></script>` : '',
-    analytics.googleAnalyticsId ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${esc(analytics.googleAnalyticsId)}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config',${jsString(analytics.googleAnalyticsId)});</script>` : '',
-    analytics.metaPixelId ? `<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',${jsString(analytics.metaPixelId)});fbq('track','PageView');</script>` : ''
+    gtmId ? `<script async src="https://www.googletagmanager.com/gtm.js?id=${esc(gtmId)}"></script>` : '',
+    googleAnalyticsId ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${esc(googleAnalyticsId)}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config',${jsString(googleAnalyticsId)});</script>` : '',
+    metaPixelId ? `<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',${jsString(metaPixelId)});fbq('track','PageView');</script>` : ''
   ].join('')
 
   return `<!DOCTYPE html>
@@ -139,7 +197,7 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f8fafc">
-<script>(function(){try{var saved=localStorage.getItem('site-theme');var theme=saved?(saved==='dark'?'dark':'light'):(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',theme);var meta=document.querySelector('meta[name="theme-color"]');if(meta&&theme==='dark')meta.setAttribute('content','#0b1220');}catch(_){document.documentElement.setAttribute('data-theme','light')}})();</script>
+<script>(function(){document.documentElement.classList.add('js');try{var saved=localStorage.getItem('site-theme');var theme=saved?(saved==='dark'?'dark':'light'):(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',theme);var meta=document.querySelector('meta[name="theme-color"]');if(meta&&theme==='dark')meta.setAttribute('content','#0b1220');}catch(_){document.documentElement.setAttribute('data-theme','light')}})();</script>
 <title>${esc(seo.title || s.companyName)}</title>
 <meta name="description" content="${esc(seo.description || s.description)}">
 ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
@@ -159,7 +217,7 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"></noscript>
-<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+<script type="application/ld+json">${jsonForHtmlScript(jsonLd)}</script>
 <style>
   :root{color-scheme:light;--page:#f8fafc;--surface:#fff;--surface-muted:#f8fafc;--ink:#0f172a;--muted:#475569;--muted-soft:#64748b;--line:#e2e8f0;--soft-blue:#eff6ff;--soft-red:#fef2f2;--topbar-bg:#eaf2ff;--topbar-ink:#0f172a;--topbar-link:#1d4ed8;--ease-out:cubic-bezier(.23,1,.32,1)}
   html[data-theme="dark"]{color-scheme:dark;--page:#0b1220;--surface:#111c31;--surface-muted:#152238;--ink:#f8fafc;--muted:#cbd5e1;--muted-soft:#94a3b8;--line:#26364f;--soft-blue:rgba(37,99,235,.16);--soft-red:rgba(239,68,68,.14);--topbar-bg:#0b1220;--topbar-ink:#f8fafc;--topbar-link:#6ee7b7}
@@ -168,15 +226,24 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   #scroll-progress{position:fixed;inset:0 0 auto 0;height:3px;z-index:70;pointer-events:none;background:linear-gradient(90deg,#2563eb,#10b981);transform:scaleX(0);transform-origin:left center;transition:transform .12s linear}
   img{max-width:100%;height:auto}
   section[id]{scroll-margin-top:5rem}
-  .fade-up{opacity:0;transform:translateY(18px);transition:opacity .55s var(--ease-out) var(--reveal-delay,0ms),transform .55s var(--ease-out) var(--reveal-delay,0ms)}
+  h1,h2{text-wrap:balance}
+  p{text-wrap:pretty}
+  .problem-card,.service-card,.plan-card,.step-card,.faq-item{transition:border-color .2s ease,box-shadow .2s ease,transform .2s var(--ease-out),background-color .2s ease}
+  .faq-toggle{min-height:3.5rem}
+  .step-card>div>span[aria-hidden="true"]{display:none!important}
+  @media (hover:hover){.problem-card:hover,.service-card:hover,.step-card:hover{border-color:#93c5fd}}
+  html[data-theme="dark"] .problem-card:hover,html[data-theme="dark"] .service-card:hover,html[data-theme="dark"] .step-card:hover{border-color:#3b82f6!important}
+  .fade-up{opacity:1;transform:none}
+  .js .fade-up{opacity:0;transform:translateY(18px);transition:opacity .55s var(--ease-out) var(--reveal-delay,0ms),transform .55s var(--ease-out) var(--reveal-delay,0ms)}
   ::selection{background:rgba(37,99,235,.18);color:var(--ink)}
   #site-header.is-scrolled{box-shadow:0 8px 26px rgba(15,23,42,.08)}
   html[data-theme="dark"] #site-header.is-scrolled{box-shadow:0 8px 26px rgba(0,0,0,.24)}
   .nav-link[aria-current="true"]{color:#2563eb}
   html[data-theme="dark"] .nav-link[aria-current="true"]{color:#93c5fd}
   .fade-up.visible{opacity:1;transform:none}
-  .faq-answer{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s var(--ease-out)}
-  .faq-item[data-open="true"] .faq-answer{grid-template-rows:1fr}
+  .faq-answer{display:grid;grid-template-rows:1fr}
+  .js .faq-answer{grid-template-rows:0fr;transition:grid-template-rows .28s var(--ease-out)}
+  .js .faq-item[data-open="true"] .faq-answer{grid-template-rows:1fr}
   .faq-answer>div{overflow:hidden}
   .faq-item[data-open="true"] .faq-chevron{transform:rotate(180deg)}
   .faq-chevron{transition:transform .28s var(--ease-out)}
@@ -230,8 +297,9 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   .wa-float{animation:pulse-soft 2.5s infinite}
   #mobile-bar{padding-bottom:calc(.75rem + env(safe-area-inset-bottom));background-color:var(--surface)!important;border-color:var(--line)!important}
   @keyframes pulse-soft{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}
+  @media (max-width:1279px){html:not(.js) #mobile-menu{display:block!important}html:not(.js) #menu-btn,html:not(.js) [data-theme-toggle],html:not(.js) .theme-picker{display:none!important}}
   @media (max-width:640px){#mobile-menu .mobile-link{min-height:2.75rem;display:flex;align-items:center}#mobile-menu>div{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.wa-float{bottom:calc(1rem + env(safe-area-inset-bottom))!important;right:1rem!important}#hero-highlights{margin-top:4.5rem!important}}
-  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.fade-up{opacity:1;transform:none;transition:none}.wa-float{animation:none}button,a,#scroll-progress{transition:none!important}}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.js .fade-up{opacity:1;transform:none;transition:none}.wa-float{animation:none}button,a,#scroll-progress{transition:none!important}}
 </style>
 ${analyticsScripts}
 </head>
@@ -250,14 +318,14 @@ ${topbar.enabled ? `
 <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200" id="site-header">
   <nav class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4" aria-label="Navegação principal">
     <a href="#inicio" class="flex items-center gap-3 min-w-0">
-      <img src="${esc(safeImageSrc(s.logoUrl, './static/projeto-logo-recortado.png'))}" alt="${esc(s.companyName)}" class="brand-mark project-logo logo-asset h-11 w-11 object-contain shrink-0" width="44" height="44" decoding="async">
+      <img src="${esc(safeImageSrc(s.logoUrl, './static/projeto-logo-recortado.png'))}" alt="" class="brand-mark project-logo logo-asset h-11 w-11 object-contain shrink-0" width="44" height="44" decoding="async">
       <span class="flex flex-col min-w-0">
-        <span class="font-extrabold text-primary leading-tight text-sm sm:text-base truncate">${esc(s.shortName || s.companyName)}</span>
-        ${navbar.badge ? `<span class="text-[11px] font-semibold text-brand leading-tight">${esc(navbar.badge)}</span>` : ''}
+        <span class="font-extrabold text-primary leading-tight text-sm sm:text-base truncate">${esc(s.companyName || s.shortName)}</span>
+        ${(s.shortName || navbar.badge) ? `<span class="text-[11px] font-semibold text-brand leading-tight">${esc(s.shortName || navbar.badge)}</span>` : ''}
       </span>
     </a>
     <div class="hidden xl:flex items-center gap-4 xl:gap-6">
-      ${navLinks.map(l => `<a href="${safeHref(l.href)}" data-nav-target="${esc(safeHref(l.href))}" class="nav-link text-sm font-medium text-slate-600 hover:text-primary transition-colors">${esc(l.label)}</a>`).join('')}
+      ${navLinks.map(l => `<a href="${esc(safeHref(l.href))}" data-nav-target="${esc(safeHref(l.href))}" class="nav-link text-sm font-medium text-slate-600 hover:text-primary transition-colors">${esc(l.label)}</a>`).join('')}
       <div class="theme-picker hidden xl:inline-flex" role="group" aria-label="Escolher tema">${THEME_CHOICES}</div>
       <button type="button" data-theme-toggle class="theme-toggle hidden lg:inline-flex xl:hidden" aria-label="Alternar tema" aria-pressed="false" title="Alternar tema">${THEME_TOGGLE}<span class="sr-only">Alternar tema</span></button>
       <a href="${wa()}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-accent hover:bg-accent-dark text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">${WA_SVG}${esc(navbar.ctaText || 'Falar no WhatsApp')}</a>
@@ -272,7 +340,7 @@ ${topbar.enabled ? `
   </nav>
   <div id="mobile-menu" class="xl:hidden hidden border-t border-slate-200 bg-white">
     <div class="px-4 py-4 flex flex-col gap-1">
-      ${navLinks.map(l => `<a href="${safeHref(l.href)}" data-nav-target="${esc(safeHref(l.href))}" class="mobile-link nav-link py-3 px-2 rounded-lg font-medium text-slate-700 hover:bg-slate-50">${esc(l.label)}</a>`).join('')}
+      ${navLinks.map(l => `<a href="${esc(safeHref(l.href))}" data-nav-target="${esc(safeHref(l.href))}" class="mobile-link nav-link py-3 px-2 rounded-lg font-medium text-slate-700 hover:bg-slate-50">${esc(l.label)}</a>`).join('')}
       <a href="${wa()}" target="_blank" rel="noopener" class="mt-2 inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-dark text-white font-semibold px-4 py-3 rounded-lg">${WA_SVG}${esc(navbar.ctaText || 'Falar no WhatsApp')}</a>
       <div class="mt-3 pt-3 border-t border-slate-200"><p class="px-2 mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Aparência</p><div class="theme-picker w-full" role="group" aria-label="Escolher tema">${THEME_CHOICES}</div></div>
     </div>
@@ -290,7 +358,7 @@ ${hero.enabled !== false ? `
     <p class="mt-5 sm:mt-6 text-base sm:text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto">${esc(hero.subtitle)}</p>
     <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-6 sm:gap-4 justify-center">
       ${hero.ctaPrimary ? `<a href="${wa()}" target="_blank" rel="noopener" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-dark text-white font-bold px-6 sm:px-9 py-4 sm:py-5 rounded-xl text-base sm:text-lg transition-all hover:scale-[1.02]">${WA_SVG}${esc(hero.ctaPrimary)}</a>` : ''}
-      ${hero.ctaSecondary ? `<a href="#como-funciona" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 ${hero.ctaPrimary ? 'bg-white/10 hover:bg-white/20 border border-white/25' : 'bg-accent hover:bg-accent-dark'} text-white font-semibold px-6 sm:px-9 py-4 sm:py-5 rounded-xl text-base sm:text-lg transition-colors">${esc(hero.ctaSecondary)}</a>` : ''}
+      ${hero.ctaSecondary ? `<a href="${esc(secondaryCtaHref)}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 ${hero.ctaPrimary ? 'bg-white/10 hover:bg-white/20 border border-white/25' : 'bg-accent hover:bg-accent-dark'} text-white font-semibold px-6 sm:px-9 py-4 sm:py-5 rounded-xl text-base sm:text-lg transition-colors">${esc(hero.ctaSecondary)}</a>` : ''}
     </div>
     <div id="hero-highlights" class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
       <div class="bg-white/5 border border-white/15 rounded-2xl px-4 sm:px-5 py-4 sm:py-6 flex flex-row sm:flex-col items-center justify-center gap-3">
@@ -405,9 +473,9 @@ ${stepsSection.enabled !== false && steps.length ? `
       <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary tracking-tight">${esc(stepsSection.title)}</h2>
       ${stepsSection.subtitle ? `<p class="mt-4 text-slate-600 text-base sm:text-lg">${esc(stepsSection.subtitle)}</p>` : ''}
     </div>
-    <ol class="relative space-y-8 md:space-y-0 md:grid md:grid-cols-4 md:gap-6">
+    <ol class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       ${steps.map((st, i) => `
-      <li class="step-card relative flex md:flex-col gap-4 fade-up" style="--reveal-delay:${Math.min(i, 5) * 55}ms">
+      <li class="step-card bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 fade-up" style="--reveal-delay:${Math.min(i, 5) * 55}ms">
         <div class="flex flex-col items-center md:flex-row md:items-center">
           <span class="w-12 h-12 shrink-0 rounded-full bg-brand text-white font-extrabold flex items-center justify-center text-lg">${String(i + 1).padStart(2, '0')}</span>
           ${i < steps.length - 1 ? `<span class="hidden md:block flex-1 h-0.5 bg-slate-200 ml-3" aria-hidden="true"></span><span class="md:hidden w-0.5 flex-1 bg-slate-200 mt-2" aria-hidden="true"></span>` : ''}
@@ -431,7 +499,7 @@ ${faqSection.enabled !== false && faqs.length ? `
           <button id="faq-trigger-${i}" class="faq-toggle w-full flex items-center justify-between gap-4 text-left px-5 py-4 font-semibold text-primary" aria-expanded="false" aria-controls="faq-panel-${i}">
 
           ${esc(f.question)}
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="faq-chevron w-5 h-5 shrink-0 text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="faq-chevron w-5 h-5 shrink-0 text-slate-400" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
         </button>
         <div class="faq-answer" id="faq-panel-${i}" role="region" aria-labelledby="faq-trigger-${i}" aria-hidden="true"><div><p class="px-5 pb-4 text-sm text-slate-600 leading-relaxed">${esc(f.answer)}</p></div></div>
       </div>`).join('')}
@@ -508,7 +576,7 @@ ${contactSection.enabled !== false ? `
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14 grid gap-10 md:grid-cols-3">
     <div>
       <div class="flex items-center gap-3">
-        <img src="${esc(safeImageSrc(s.logoUrl, './static/projeto-logo-recortado.png'))}" alt="${esc(s.companyName)}" class="project-logo logo-asset h-12 w-12 object-contain shrink-0" width="48" height="48" loading="lazy" decoding="async">
+        <img src="${esc(safeImageSrc(s.logoUrl, './static/projeto-logo-recortado.png'))}" alt="" class="project-logo logo-asset h-12 w-12 object-contain shrink-0" width="48" height="48" loading="lazy" decoding="async">
         <p class="font-extrabold text-white leading-tight">${esc(s.companyName)}</p>
       </div>
       <p class="mt-4 text-sm leading-relaxed text-slate-400">${esc(footer.description)}</p>
@@ -521,10 +589,10 @@ ${contactSection.enabled !== false ? `
         <li class="flex items-center gap-2">${icon('map-pin', 'w-5 h-5')}${esc(s.city)} — ${esc(s.state)}</li>
         ${s.businessHours ? `<li class="flex items-center gap-2">${icon('clock', 'w-5 h-5')}${esc(s.businessHours)}</li>` : ''}
       </ul>
-      ${(s.instagram || s.facebook || s.tiktok) ? `<div class="mt-4 flex gap-3">
-        ${s.instagram ? `<a href="${esc(s.instagram)}" target="_blank" rel="noopener" aria-label="Instagram" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg></a>` : ''}
-        ${s.facebook ? `<a href="${esc(s.facebook)}" target="_blank" rel="noopener" aria-label="Facebook" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>` : ''}
-        ${s.tiktok ? `<a href="${esc(s.tiktok)}" target="_blank" rel="noopener" aria-label="TikTok" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg></a>` : ''}
+      ${(instagramHref || facebookHref || tiktokHref) ? `<div class="mt-4 flex gap-3">
+        ${instagramHref ? `<a href="${esc(instagramHref)}" target="_blank" rel="noopener" aria-label="Instagram" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg></a>` : ''}
+        ${facebookHref ? `<a href="${esc(facebookHref)}" target="_blank" rel="noopener" aria-label="Facebook" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>` : ''}
+        ${tiktokHref ? `<a href="${esc(tiktokHref)}" target="_blank" rel="noopener" aria-label="TikTok" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg></a>` : ''}
       </div>` : ''}
     </div>
     <div>
@@ -539,7 +607,7 @@ ${contactSection.enabled !== false ? `
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 text-center sm:text-left">
       <p>© ${new Date().getFullYear()} ${esc(s.copyright)}</p>
       <nav aria-label="Links institucionais" class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-        <a href="#contato" class="hover:text-white transition-colors">Contato</a>
+        <a href="${esc(footerNavHref)}" class="hover:text-white transition-colors">${esc(footerNavLabel)}</a>
       </nav>
       <p>Pedreiras — MA · Atendimento remoto</p>
     </div>
@@ -610,6 +678,7 @@ ${widget.mobileBarEnabled ? `
   function setMenu(open){
     if (!btn || !menu) return;
     menu.classList.toggle('hidden', !open);
+    menu.setAttribute('aria-hidden', String(!open));
     btn.setAttribute('aria-expanded', String(open));
     btn.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
     if (barsIcon && closeIcon) {
@@ -623,6 +692,7 @@ ${widget.mobileBarEnabled ? `
     syncHeader();
   }
   if (btn && menu) {
+    setMenu(false);
     btn.addEventListener('click', function(e){ e.stopPropagation(); setMenu(menu.classList.contains('hidden')); });
     menu.querySelectorAll('.mobile-link, a').forEach(function(a){ a.addEventListener('click', function(){ setMenu(false); }); });
     document.addEventListener('click', function(e){
