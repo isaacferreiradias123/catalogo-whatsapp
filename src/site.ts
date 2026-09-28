@@ -101,16 +101,16 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
   const widget = ct.whatsappWidget || {}
   const analytics = ct.analytics || {}
 
-  const plans: any[] = ct.plans || []
-  const services: any[] = ct.services || []
-  const faqs: any[] = ct.faqs || []
-  const steps: any[] = ct.steps || []
-  const problemCards: any[] = ct.problemCards || []
+  const plans = Array.isArray(ct.plans) ? ct.plans : []
+  const services = Array.isArray(ct.services) ? ct.services : []
+  const faqs = Array.isArray(ct.faqs) ? ct.faqs : []
+  const steps = Array.isArray(ct.steps) ? ct.steps : []
+  const problemCards = Array.isArray(ct.problemCards) ? ct.problemCards : []
 
   const wa = (msg?: string) => waLink(s.whatsapp, msg || s.whatsappDefaultMessage)
 
   const testimonialsSection = ct.testimonialsSection || {}
-  const testimonials: any[] = ct.testimonials || []
+  const testimonials = Array.isArray(ct.testimonials) ? ct.testimonials : []
   const contactSection = ct.contactSection || {}
 
   const sectionAvailability: Record<string, boolean> = {
@@ -126,7 +126,7 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
     '#contato': contactSection.enabled !== false
   }
 
-  const navLinks: any[] = (Array.isArray(navbar.links) ? navbar.links : []).filter((link: any) => {
+  const navLinks = (Array.isArray(navbar.links) ? navbar.links : []).filter((link) => {
     const href = safeHref(link?.href, '')
     return Boolean(href) && (!href.startsWith('#') || sectionAvailability[href] === true)
   })
@@ -173,7 +173,7 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
       ? {
           '@type': 'OfferCatalog',
           name: servicesSection.title || 'Servicos',
-          itemListElement: services.map((sv: any) => ({
+          itemListElement: services.map((sv) => ({
             '@type': 'Offer',
             itemOffered: { '@type': 'Service', name: sv.name, description: sv.description }
           }))
@@ -294,7 +294,7 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   .uema-light-logo{display:block!important}
   html[data-theme="dark"] .uema-dark-logo{display:block!important}
   html[data-theme="dark"] .uema-light-logo{display:none!important}
-  .wa-float{animation:pulse-soft 2.5s infinite}
+  .wa-float{bottom:1.25rem;animation:pulse-soft 2.5s infinite}
   #mobile-bar{padding-bottom:calc(.75rem + env(safe-area-inset-bottom));background-color:var(--surface)!important;border-color:var(--line)!important}
   @keyframes pulse-soft{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}
   @media (max-width:1279px){html:not(.js) #mobile-menu{display:block!important}html:not(.js) #menu-btn,html:not(.js) [data-theme-toggle],html:not(.js) .theme-picker{display:none!important}}
@@ -501,7 +501,7 @@ ${faqSection.enabled !== false && faqs.length ? `
           ${esc(f.question)}
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="faq-chevron w-5 h-5 shrink-0 text-slate-400" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
         </button>
-        <div class="faq-answer" id="faq-panel-${i}" role="region" aria-labelledby="faq-trigger-${i}" aria-hidden="true"><div><p class="px-5 pb-4 text-sm text-slate-600 leading-relaxed">${esc(f.answer)}</p></div></div>
+        <div class="faq-answer" id="faq-panel-${i}" role="region" aria-labelledby="faq-trigger-${i}" aria-hidden="false"><div><p class="px-5 pb-4 text-sm text-slate-600 leading-relaxed">${esc(f.answer)}</p></div></div>
       </div>`).join('')}
     </div>
   </div>
@@ -526,7 +526,7 @@ ${testimonialsSection.enabled !== false && testimonials.length ? `
       ${testimonialsSection.subtitle ? `<p class="mt-4 text-slate-600 text-base sm:text-lg">${esc(testimonialsSection.subtitle)}</p>` : ''}
     </div>
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      ${testimonials.map((t: any, i: number) => {
+      ${testimonials.map((t, i) => {
         const rating = Math.max(1, Math.min(5, Number(t.rating) || 5))
         return `
       <figure class="bg-white border border-slate-200 rounded-2xl p-6 shadow-card flex flex-col fade-up" style="--reveal-delay:${Math.min(i, 5) * 55}ms">
@@ -715,13 +715,16 @@ ${widget.mobileBarEnabled ? `
   }
   // FAQ accordion
   document.querySelectorAll('.faq-toggle').forEach(function(t){
+    var item = t.closest('.faq-item');
+    if (!item) return;
+    var panel = item.querySelector('.faq-answer');
+    t.setAttribute('aria-expanded', 'false');
+    if (panel) panel.setAttribute('aria-hidden', 'true');
     t.addEventListener('click', function(){
-      var item = t.closest('.faq-item');
       var open = item.getAttribute('data-open') === 'true';
       var nextOpen = !open;
       item.setAttribute('data-open', String(nextOpen));
       t.setAttribute('aria-expanded', String(nextOpen));
-      var panel = item.querySelector('.faq-answer');
       if (panel) panel.setAttribute('aria-hidden', String(!nextOpen));
     });
   });

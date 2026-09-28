@@ -62,6 +62,7 @@ test('conteúdo continua visível e navegável quando JavaScript não executa', 
   cssRuleHas('\\.js \\.fade-up', [/opacity:0/])
   cssRuleHas('\\.faq-answer', [/display:grid/, /grid-template-rows:1fr/])
   cssRuleHas('html:not\\(\\.js\\) #mobile-menu', [/display:block!important/])
+  assert.match(body, /id="faq-panel-\\d+"[^>]*aria-hidden="false"/)
 })
 
 test('preferência por movimento reduzido é respeitada', () => {
