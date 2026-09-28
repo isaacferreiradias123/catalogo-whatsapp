@@ -13,6 +13,7 @@ export const content: SiteContent = {
     description: 'Organização simples do WhatsApp Business para pequenos negócios, com foco em Pedreiras — MA e atendimento remoto para outros lugares.',
     logoUrl: './static/projeto-logo-recortado.png',
     institutionLogoUrl: './static/uema-logo-recortado.png',
+    institutionLogoDarkUrl: './static/uema-logo-dark.png',
     faviconUrl: './static/projeto-logo-recortado.png',
     whatsapp: '5599981687603',
     whatsappDisplay: '(99) 98168-7603',

@@ -1,0 +1,7 @@
+{
+  "name": "CatáloGO | WhatsApp Vendas Express",
+  "description": "Load page estática da CatáloGO — WhatsApp Vendas Express.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

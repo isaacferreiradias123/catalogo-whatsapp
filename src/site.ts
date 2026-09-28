@@ -18,7 +18,7 @@ function safeHref(value: unknown, fallback = '#'): string {
 
 function safeImageSrc(value: unknown, fallback: string): string {
   const raw = String(value ?? '').trim()
-  if (/^(https?:\/\/|\/)[^\s<]+$/i.test(raw)) return raw
+  if (/^(https?:\/\/|\/|\.\/)[^\s<"'>]+$/i.test(raw)) return raw
   return fallback
 }
 
@@ -139,7 +139,7 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f8fafc">
-<script>(function(){try{var saved=localStorage.getItem('site-theme');var theme=saved==='dark'?'dark':'light';document.documentElement.setAttribute('data-theme',theme)}catch(_){document.documentElement.setAttribute('data-theme','light')}})();</script>
+<script>(function(){try{var saved=localStorage.getItem('site-theme');var theme=saved?(saved==='dark'?'dark':'light'):(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',theme);var meta=document.querySelector('meta[name="theme-color"]');if(meta&&theme==='dark')meta.setAttribute('content','#0b1220');}catch(_){document.documentElement.setAttribute('data-theme','light')}})();</script>
 <title>${esc(seo.title || s.companyName)}</title>
 <meta name="description" content="${esc(seo.description || s.description)}">
 ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
@@ -218,8 +218,15 @@ ${seo.keywords ? `<meta name="keywords" content="${esc(seo.keywords)}">` : ''}
   .brand-mark{display:block;background:transparent;border-radius:0;padding:0;transition:opacity .2s ease,transform .16s var(--ease-out)}
   .brand-mark:hover{opacity:.86}
   .logo-asset{display:block;max-width:100%;height:auto;object-fit:contain}
-  html[data-theme="dark"] .project-logo{background:#f8fafc;border-radius:.5rem;padding:.2rem;opacity:1!important}
-  html[data-theme="dark"] .institution-logo{background:#f8fafc;border-radius:.75rem;padding:.65rem;opacity:1!important}
+  /* Logotipo do Projeto (Gestão Comercial / CatáloGO): preto no claro, branco nítido no escuro e no rodapé escuro */
+  html[data-theme="dark"] .project-logo{filter:brightness(0) invert(1);background:transparent!important;border:none!important;padding:0!important;border-radius:0!important}
+  footer .project-logo{filter:brightness(0) invert(1);background:transparent!important;border:none!important;padding:0!important;border-radius:0!important}
+  /* Logotipo da UEMA: sem bordas brancas, alternando entre versão clara e escura oficial */
+  .institution-logo{background:transparent!important;border:none!important;padding:0!important;border-radius:0!important}
+  .uema-dark-logo{display:none!important}
+  .uema-light-logo{display:block!important}
+  html[data-theme="dark"] .uema-dark-logo{display:block!important}
+  html[data-theme="dark"] .uema-light-logo{display:none!important}
   .wa-float{animation:pulse-soft 2.5s infinite}
   #mobile-bar{padding-bottom:calc(.75rem + env(safe-area-inset-bottom));background-color:var(--surface)!important;border-color:var(--line)!important}
   @keyframes pulse-soft{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}
@@ -257,9 +264,10 @@ ${topbar.enabled ? `
     </div>
     <div class="flex items-center gap-2 xl:hidden">
       <button type="button" data-theme-toggle class="theme-toggle" aria-label="Ativar tema escuro" aria-pressed="false" title="Alternar tema">${THEME_TOGGLE}<span class="sr-only">Alternar tema</span></button>
-      <button id="menu-btn" class="p-2 text-primary" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-menu">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-7 h-7"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-    </button>
+      <button id="menu-btn" class="p-2 text-primary rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-menu">
+        <svg id="menu-icon-bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-7 h-7" aria-hidden="true"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        <svg id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-7 h-7 hidden" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
   </nav>
   <div id="mobile-menu" class="xl:hidden hidden border-t border-slate-200 bg-white">
@@ -334,7 +342,10 @@ ${authority.enabled !== false ? `
     </div>
     <div class="fade-up">
       <div class="flex flex-col items-center text-center">
-        <img src="${esc(safeImageSrc(s.institutionLogoUrl, './static/uema-logo-recortado.png'))}" alt="Logotipo da Universidade Estadual do Maranhão — UEMA" class="institution-logo logo-asset w-full max-w-2xl" loading="lazy" decoding="async">
+        <div class="w-full max-w-md sm:max-w-lg lg:max-w-xl mx-auto flex items-center justify-center">
+          <img src="${esc(safeImageSrc(s.institutionLogoUrl, './static/uema-logo-recortado.png'))}" alt="Logotipo da Universidade Estadual do Maranhão — UEMA" class="institution-logo uema-light-logo logo-asset w-full h-auto object-contain" width="1400" height="511" loading="lazy" decoding="async">
+          <img src="${esc(safeImageSrc(s.institutionLogoDarkUrl, './static/uema-logo-dark.png'))}" alt="Logotipo da Universidade Estadual do Maranhão — UEMA" class="institution-logo uema-dark-logo logo-asset w-full h-auto object-contain" width="1400" height="511" loading="lazy" decoding="async">
+        </div>
         <p class="mt-6 text-xs text-slate-400 leading-relaxed max-w-sm">A identidade institucional pertence à universidade. O serviço comercial é de responsabilidade do projeto, com identidade própria.</p>
       </div>
     </div>
@@ -519,8 +530,8 @@ ${contactSection.enabled !== false ? `
     <div>
       <h3 class="font-bold text-white mb-4">Institucional</h3>
       <p class="text-xs text-slate-400 leading-relaxed">${esc(footer.institutionalNote)}</p>
-      <div class="mt-4 max-w-sm">
-        <img src="${esc(safeImageSrc(s.institutionLogoUrl, './static/uema-logo-recortado.png'))}" alt="Logotipo da UEMA — Universidade Estadual do Maranhão" class="institution-logo logo-asset w-full" loading="lazy" decoding="async">
+      <div class="mt-4 max-w-[220px] sm:max-w-[260px]">
+        <img src="${esc(safeImageSrc(s.institutionLogoDarkUrl, './static/uema-logo-dark.png'))}" alt="Logotipo da UEMA — Universidade Estadual do Maranhão" class="institution-logo logo-asset w-full h-auto object-contain" width="1400" height="511" loading="lazy" decoding="async">
       </div>
     </div>
   </div>
@@ -594,11 +605,17 @@ ${widget.mobileBarEnabled ? `
   var btn = document.getElementById('menu-btn');
   var menu = document.getElementById('mobile-menu');
   var header = document.getElementById('site-header');
+  var barsIcon = document.getElementById('menu-icon-bars');
+  var closeIcon = document.getElementById('menu-icon-close');
   function setMenu(open){
     if (!btn || !menu) return;
     menu.classList.toggle('hidden', !open);
     btn.setAttribute('aria-expanded', String(open));
     btn.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+    if (barsIcon && closeIcon) {
+      barsIcon.classList.toggle('hidden', open);
+      closeIcon.classList.toggle('hidden', !open);
+    }
   }
   if (header) {
     function syncHeader(){ header.classList.toggle('is-scrolled', window.scrollY > 8); }
