@@ -77,6 +77,11 @@ const WA_SVG = `<svg viewBox="0 0 32 32" fill="currentColor" class="w-6 h-6" ari
 const THEME_TOGGLE = `<span class="theme-moon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span><span class="theme-sun" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span>`
 const THEME_CHOICES = `<button type="button" data-theme-choice="light" aria-pressed="false"><span class="theme-choice-sun" aria-hidden="true">☼</span><span>Claro</span></button><button type="button" data-theme-choice="dark" aria-pressed="false"><span class="theme-choice-moon" aria-hidden="true">◐</span><span>Escuro</span></button>`
 
+type NavLink = {
+  href?: unknown
+  label?: unknown
+}
+
 export type RenderOptions = {
   /** Origem absoluta da requisicao (ex.: https://exemplo.com). Usada em canonical/og:url. */
   origin?: string
@@ -126,7 +131,7 @@ export function renderSite(ct: SiteContent, opts: RenderOptions = {}): string {
     '#contato': contactSection.enabled !== false
   }
 
-  const navLinks = (Array.isArray(navbar.links) ? navbar.links : []).filter((link) => {
+  const navLinks: NavLink[] = (Array.isArray(navbar.links) ? navbar.links : []).filter((link: NavLink) => {
     const href = safeHref(link?.href, '')
     return Boolean(href) && (!href.startsWith('#') || sectionAvailability[href] === true)
   })
